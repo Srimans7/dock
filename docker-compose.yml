@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: octadmin
+      POSTGRES_PASSWORD: mint@2025
+      POSTGRES_DB: octa
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - backend
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka_broker
+    restart: always
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    networks:
+      - backend
+
+  consumer:
+    build: ./consumer
+    container_name: kafka_consumer
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=octa
+      - POSTGRES_USER=octadmin
+      - POSTGRES_PASSWORD=mint@2025
+      - MIXTRAL_API_URL=https://api.mistral.ai/v1/chat/completions
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge
