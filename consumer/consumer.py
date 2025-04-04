@@ -43,3 +43,25 @@ while True:
     print(f"✅ Sent: {payload}, Response: {response}")
 
 consumer.close()
+
+
+
+
+curl -X POST -H "Content-Type: application/json" --data '{
+  "name": "debezium-postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "database.hostname": "localhost",
+    "database.port": "5432",
+    "database.user": "debezium",
+    "database.password": "password",
+    "database.dbname": "n8n",
+    "database.server.name": "dbserver1",
+    "plugin.name": "pgoutput",
+    "table.include.list": "public.booklet",
+    "slot.name": "debezium_slot",
+    "publication.name": "debezium_publication"
+  }
+}' http://localhost:8083/connectors
+

@@ -21,24 +21,37 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - "9092:9092"
     networks:
       - backend
 
   kafka-connect:
-    image: debezium/connect:latest
+    image: debezium/connect:2.7.3.Final
     environment:
       - GROUP_ID="1"
       - CONFIG_STORAGE_TOPIC="docker-connect-configs"
       - OFFSET_STORAGE_TOPIC="docker-connect-offsets"
       - STATUS_STORAGE_TOPIC="docker-connect-status"
-      - BOOTSTRAP_SERVERS=localhost:9092
+      - BOOTSTRAP_SERVERS=165.232.185.65:9092
     ports:
       - "8083:8083"
-
+    networks:
+      - backend
+  
+  consumer:
+    build: ./consumer
+    container_name: kafka_consumer
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=165.232.185.65:9092
+      - MIXTRAL_API_URL=https://api.mistral.ai/v1/chat/completions
+    networks:
+      - backend
 
 networks:
   backend:
